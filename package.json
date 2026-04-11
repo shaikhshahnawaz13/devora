@@ -1,0 +1,10 @@
+{
+  "name": "devora",
+  "version": "2.0.0",
+  "description": "Devora — Developer Intelligence Platform. Analyze GitHub portfolios with 5-dimension scoring, AI insights, and progress tracking.",
+  "main": "index.html",
+  "keywords": ["github", "portfolio", "analyzer", "developer-tools", "javascript", "neumorphic", "ai", "groq"],
+  "author": "Shaikh Shahnawaz",
+  "license": "MIT",
+  "homepage": "https://shaikhshahnawaz13.github.io/devora"
+}

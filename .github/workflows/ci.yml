@@ -1,0 +1,59 @@
+name: Devora CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run scoring tests
+        run: node tests/scoring.test.js
+
+      - name: Run detection tests
+        run: node tests/detection.test.js
+
+      - name: Check JS syntax
+        run: |
+          node --check api.js
+          node --check scoring.js
+          node --check components.js
+          node --check views.js
+          node --check app.js
+          echo "All syntax checks passed"
+
+  validate:
+    name: Validate HTML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check index.html exists and has required scripts
+        run: |
+          test -f index.html || (echo "index.html missing" && exit 1)
+          grep -q "api.js" index.html || (echo "api.js not referenced" && exit 1)
+          grep -q "scoring.js" index.html || (echo "scoring.js not referenced" && exit 1)
+          grep -q "components.js" index.html || (echo "components.js not referenced" && exit 1)
+          grep -q "views.js" index.html || (echo "views.js not referenced" && exit 1)
+          grep -q "app.js" index.html || (echo "app.js not referenced" && exit 1)
+          echo "HTML validation passed"
+
+      - name: Check required files exist
+        run: |
+          test -f style.css && echo "style.css OK"
+          test -f LICENSE && echo "LICENSE OK"
+          test -f README.md && echo "README.md OK"
+          test -f tests/scoring.test.js && echo "tests OK"

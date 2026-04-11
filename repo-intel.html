@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REPO_INTEL // DEVORA</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='9' r='3' stroke='%2300ff41' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='9' cy='23' r='3' stroke='%2300ff41' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='23' cy='23' r='3' stroke='%2300ff41' stroke-width='1.5' fill='none'/%3E%3Cline x1='16' y1='12' x2='10' y2='20' stroke='%2300ff41' stroke-width='1' opacity='.6'/%3E%3Cline x1='16' y1='12' x2='22' y2='20' stroke='%2300ff41' stroke-width='1' opacity='.6'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link rel="stylesheet" href="repo-intel-style.css">
+</head>
+<body>
+
+<!-- ══ BOOT SCREEN ══════════════════════════════════════════════════════ -->
+<div id="boot-screen">
+  <div class="boot-noise"></div>
+  <div class="boot-scanline"></div>
+
+  <!-- Keys button always visible on boot screen -->
+  <button class="boot-keys-btn" onclick="showKeyModal()" id="boot-keys-btn">[ KEYS ]</button>
+
+  <div class="boot-inner">
+    <div class="boot-logo">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="10" r="5" stroke="#00ff41" stroke-width="1.5"/>
+        <circle cx="10" cy="38" r="5" stroke="#00ff41" stroke-width="1.5" opacity=".8"/>
+        <circle cx="38" cy="38" r="5" stroke="#00ff41" stroke-width="1.5" opacity=".8"/>
+        <line x1="24" y1="15" x2="12" y2="33" stroke="#00ff41" stroke-width="1" opacity=".4"/>
+        <line x1="24" y1="15" x2="36" y2="33" stroke="#00ff41" stroke-width="1" opacity=".4"/>
+        <line x1="15" y1="38" x2="33" y2="38" stroke="#00ff41" stroke-width="1" opacity=".25" stroke-dasharray="3 3"/>
+      </svg>
+    </div>
+    <div class="boot-lines" id="boot-lines"></div>
+    <div class="boot-prompt-wrap">
+      <div class="boot-prompt-label">PASTE_REPOSITORY_URL</div>
+      <div class="boot-prompt-row">
+        <span class="boot-prompt-symbol">❯</span>
+        <input id="boot-input" type="text" placeholder="github.com/owner/repo" autocomplete="off" spellcheck="false">
+        <span class="boot-cursor" id="boot-cursor">█</span>
+      </div>
+      <div id="boot-err" class="boot-err hidden"></div>
+      <!-- Rate limit warning shown when no token set -->
+      <div id="boot-token-warn" class="boot-token-warn">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="1.5"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="#ffd700"/></svg>
+        No GitHub token — limited to 60 req/hr.
+        <button onclick="showKeyModal()" class="boot-token-link">Add token →</button>
+      </div>
+      <div class="boot-examples">
+        <span class="be-label">try:</span>
+        <button class="be-btn" onclick="bootLoad('facebook/react')">facebook/react</button>
+        <button class="be-btn" onclick="bootLoad('vercel/next.js')">vercel/next.js</button>
+        <button class="be-btn" onclick="bootLoad('shaikhshahnawaz13/devora')">shaikhshahnawaz13/devora</button>
+      </div>
+    </div>
+    <div class="boot-features">
+      <div class="bf-item">◈ DEP_GRAPH</div>
+      <div class="bf-item">◈ ARCH_MAP</div>
+      <div class="bf-item">◈ HEALTH_SCORE</div>
+      <div class="bf-item">◈ IMPACT_TRACE</div>
+      <div class="bf-item">◈ AI_INSIGHTS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOADING SCREEN ════════════════════════════════════════════════════ -->
+<div id="load-screen" class="hidden">
+  <div class="boot-noise"></div>
+  <div class="ls-inner">
+    <div class="ls-header">
+      <div class="ls-spinner"></div>
+      <div class="ls-repo" id="ls-repo">analyzing...</div>
+    </div>
+    <div class="ls-steps" id="ls-steps"></div>
+    <div class="ls-bar-wrap"><div class="ls-bar" id="ls-bar"></div></div>
+    <div class="ls-label" id="ls-label"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN IDE ═══════════════════════════════════════════════════════════ -->
+<div id="ide" class="hidden">
+
+  <!-- TITLE BAR -->
+  <div id="titlebar">
+    <div class="tb-left">
+      <button class="mobile-menu-btn" onclick="toggleMobilePanel()" title="Toggle files">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="index.html" class="tb-back" title="Back to Devora">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </a>
+      <span class="tb-logo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="2" stroke="#00ff41" stroke-width="1.5"/><circle cx="5" cy="19" r="2" stroke="#00ff41" stroke-width="1.5" opacity=".7"/><circle cx="19" cy="19" r="2" stroke="#00ff41" stroke-width="1.5" opacity=".7"/><line x1="12" y1="7" x2="6.5" y2="17" stroke="#00ff41" stroke-width="1" opacity=".5"/><line x1="12" y1="7" x2="17.5" y2="17" stroke="#00ff41" stroke-width="1" opacity=".5"/></svg>
+        DEVORA<span class="tb-sep">::</span>REPO_INTEL
+      </span>
+    </div>
+    <div class="tb-center">
+      <div class="tb-url-row">
+        <span class="tb-prompt">❯</span>
+        <input id="tb-url" type="text" autocomplete="off" spellcheck="false" placeholder="github.com/owner/repo">
+        <button id="tb-scan-btn" onclick="reScan()">SCAN</button>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-pill" id="key-pill" onclick="showKeyModal()">
+        <span id="key-pill-text">[ KEYS ]</span>
+      </div>
+      <button class="tb-icon-btn" onclick="showBoot()" title="New scan">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 16H3v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div id="workspace">
+
+    <!-- ACTIVITY BAR -->
+    <div id="activity-bar">
+      <div class="ab-section">
+        <button class="ab-btn active" data-panel="explorer" onclick="togglePanel('explorer',this)" title="FILE_EXPLORER">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+        <button class="ab-btn" data-panel="outline" onclick="togglePanel('outline',this)" title="OUTLINE">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="ab-section ab-bottom">
+        <button class="ab-btn" onclick="showKeyModal()" title="API_KEYS">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <a href="index.html" class="ab-btn" title="HOME">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/><polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" stroke-width="1.5"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL -->
+    <div id="side-panel">
+      <div id="panel-explorer" class="panel-view active">
+        <div class="pv-header">
+          <span class="pv-title">FILE_EXPLORER</span>
+          <input class="pv-search" id="file-search" type="text" placeholder="filter..." autocomplete="off" oninput="filterFiles(this.value)">
+        </div>
+        <div id="file-tree"></div>
+      </div>
+      <div id="panel-outline" class="panel-view">
+        <div class="pv-header"><span class="pv-title">OUTLINE</span></div>
+        <div id="outline-content"></div>
+      </div>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div id="mobile-overlay" onclick="closeMobilePanel()"></div>
+
+    <!-- EDITOR AREA -->
+    <div id="editor-area">
+
+      <!-- TAB STRIP -->
+      <div id="tab-strip">
+        <div class="tab-strip-tabs">
+          <button class="ts-tab active" data-tab="graph" onclick="switchTab('graph')">
+            <span class="ts-dot" style="background:var(--acc)"></span>DEP_GRAPH
+          </button>
+          <button class="ts-tab" data-tab="overview" onclick="switchTab('overview')">
+            <span class="ts-dot" style="background:var(--cyan)"></span>OVERVIEW
+          </button>
+          <button class="ts-tab" data-tab="architecture" onclick="switchTab('architecture')">
+            <span class="ts-dot" style="background:#4ade80"></span>ARCH_MAP
+          </button>
+          <button class="ts-tab" data-tab="health" onclick="switchTab('health')">
+            <span class="ts-dot" style="background:var(--ylw)"></span>HEALTH
+          </button>
+          <button class="ts-tab" data-tab="ai" onclick="switchTab('ai')">
+            <span class="ts-dot" style="background:var(--pur)"></span>AI_INTEL
+          </button>
+          <button class="ts-tab" data-tab="timeline" onclick="switchTab('timeline')">
+            <span class="ts-dot" style="background:var(--red)"></span>TIMELINE
+          </button>
+          <button class="ts-tab" data-tab="contribute" onclick="switchTab('contribute')">
+            <span class="ts-dot" style="background:var(--acc)"></span>ONBOARD
+          </button>
+        </div>
+        <div class="tab-strip-actions">
+          <button class="ts-action" id="impact-btn" onclick="toggleImpact()" title="IMPACT_MODE">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            IMPACT
+          </button>
+          <button class="ts-action" onclick="graphFit()" title="FIT_VIEW">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- GRAPH -->
+      <div id="graph-container">
+        <canvas id="graph-bg"></canvas>
+        <svg id="graph-svg"></svg>
+
+        <!-- MINI MAP -->
+        <div id="mini-map">
+          <div class="mm-label">MINIMAP</div>
+          <canvas id="mini-canvas" width="120" height="80"></canvas>
+        </div>
+
+        <!-- GRAPH STATS HUD -->
+        <div id="graph-hud">
+          <div class="hud-line"><span class="hud-key">NODES</span><span class="hud-val" id="hud-nodes">—</span></div>
+          <div class="hud-line"><span class="hud-key">EDGES</span><span class="hud-val" id="hud-edges">—</span></div>
+          <div class="hud-line"><span class="hud-key">CIRC</span><span class="hud-val hud-red" id="hud-circ">—</span></div>
+          <div class="hud-line"><span class="hud-key">DEAD</span><span class="hud-val hud-dim" id="hud-dead">—</span></div>
+        </div>
+
+        <!-- IMPACT OVERLAY -->
+        <div id="impact-overlay" class="hidden">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="#bf00ff" stroke-width="1.5" stroke-linecap="round"/></svg>
+          IMPACT_MODE_ACTIVE — SELECT_NODE_TO_TRACE
+          <button class="iov-exit" onclick="toggleImpact()">[ ESC ]</button>
+        </div>
+
+        <!-- ZOOM CONTROLS -->
+        <div id="zoom-ctrl">
+          <button class="zc-btn" onclick="graphZoomIn()">+</button>
+          <button class="zc-btn" onclick="graphZoomOut()">−</button>
+          <button class="zc-btn" onclick="graphFit()">⊙</button>
+        </div>
+
+        <!-- LEGEND -->
+        <div id="graph-legend">
+          <div class="gl-row"><span class="gl-dot" style="background:#00ff41"></span>ENTRY</div>
+          <div class="gl-row"><span class="gl-dot" style="background:#00aaff"></span>CORE</div>
+          <div class="gl-row"><span class="gl-dot" style="background:#ffcc00"></span>CONFIG</div>
+          <div class="gl-row"><span class="gl-dot" style="background:#ff4444"></span>CIRCULAR</div>
+          <div class="gl-row"><span class="gl-dot" style="background:#222;border:1px solid #333"></span>UNUSED</div>
+        </div>
+      </div>
+
+      <!-- SCROLL CONTENT -->
+      <div id="scroll-content"></div>
+
+    </div>
+
+    <!-- INSPECTOR PANEL -->
+    <div id="inspector">
+      <div id="insp-empty">
+        <div class="insp-empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--t3)" stroke-width="1.5"/><path d="m21 21-4.35-4.35" stroke="var(--t3)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="insp-empty-text">SELECT_NODE<br>TO_INSPECT</div>
+      </div>
+      <div id="insp-content" class="hidden">
+        <div id="insp-head">
+          <div id="insp-filename"></div>
+          <div id="insp-path"></div>
+          <div id="insp-badges"></div>
+        </div>
+        <div id="insp-body"></div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <div class="sb-left">
+      <span class="sb-dot active"></span>
+      <span class="sb-item" id="sb-repo">DEVORA::REPO_INTEL</span>
+      <span class="sb-sep">│</span>
+      <span class="sb-item" id="sb-files">— files</span>
+      <span class="sb-sep">│</span>
+      <span class="sb-item" id="sb-health">health: —</span>
+    </div>
+    <div class="sb-right">
+      <span class="sb-item">JetBrains Mono</span>
+      <span class="sb-sep">│</span>
+      <span class="sb-item">UTF-8</span>
+      <span class="sb-sep">│</span>
+      <span class="sb-item sb-version">v2.0</span>
+    </div>
+  </div>
+
+</div><!-- /ide -->
+
+<!-- TOOLTIP -->
+<div id="g-tooltip"></div>
+
+<!-- KEY MODAL -->
+<div id="key-modal" onclick="if(event.target===this)hideKeyModal()">
+  <div class="km-box">
+    <div class="km-title">┌─ API_KEYS ─────────────────────────────┐</div>
+    <div class="km-body">
+      <div class="km-field">
+        <label class="km-label">GITHUB_TOKEN <span class="km-rec">// recommended — 5000 req/hr vs 60</span></label>
+        <div class="km-link">Generate at <a href="https://github.com/settings/tokens/new?scopes=public_repo" target="_blank">github.com/settings/tokens</a> (public_repo scope only)</div>
+        <div class="km-input-row">
+          <span class="km-prompt">❯</span>
+          <input class="km-input" id="km-gh" type="password" placeholder="ghp_xxxx or github_pat_xxxx">
+        </div>
+      </div>
+      <div class="km-field">
+        <label class="km-label">GROQ_API_KEY <span class="km-opt">// optional — enables AI summaries</span></label>
+        <div class="km-link">Free at <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
+        <div class="km-input-row">
+          <span class="km-prompt">❯</span>
+          <input class="km-input" id="km-groq" type="password" placeholder="gsk_xxxx">
+        </div>
+      </div>
+      <div class="km-actions">
+        <button class="km-save" onclick="saveKeys()">[ SAVE_KEYS ]</button>
+        <button class="km-cancel" onclick="hideKeyModal()">[ CANCEL ]</button>
+      </div>
+    </div>
+    <div class="km-footer">└────────────────────────────────────────┘</div>
+  </div>
+</div>
+
+<script src="repo-intel-analysis.js"></script>
+<script src="repo-intel-graph.js"></script>
+<script src="repo-intel-views.js"></script>
+<script src="repo-intel-app.js"></script>
+</body>
+</html>
